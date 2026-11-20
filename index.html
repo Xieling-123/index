@@ -1,1 +1,20 @@
-<meta charset="utf-8"><h1>你好！这是通过 GitHub CI/CD 自动打包的网页！</h1>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>企业级自动化部署与监控演示</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding-top: 60px; background: #f4f6f9; }
+    .card { background: white; max-width: 600px; margin: auto; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .badge { display: inline-block; padding: 6px 12px; background: #28a745; color: white; border-radius: 20px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="badge">● 系统运行正常 (Healthy)</span>
+    <h1>全链路 CI/CD + K8s 监控版上线成功！</h1>
+    <p>架构：GitHub Actions 自动打包 ➔ Nginx 定制网关 ➔ K8s 集群健康探针监控</p>
+    <p>监控接口：<a href="/health">/health (健康检查)</a> | <a href="/nginx_status">/nginx_status (连接数监控)</a></p>
+  </div>
+</body>
+</html>

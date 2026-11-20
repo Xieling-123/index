@@ -1,0 +1,59 @@
+name: 完整 CI/CD 质检、打包与自动部署流水线
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  # 阶段一 (CI)：检查配置文件语法 & 自动打包推送镜像
+  ci-build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: 1. 拉取最新代码
+        uses: actions/checkout@v4
+
+      - name: 2. 检查关键配置文件是否齐全
+        run: |
+          test -f index.html
+          test -f nginx.conf
+          test -f Dockerfile
+          test -f k8s/deployment.yaml
+          echo "所有核心配置文件质检通过！"
+
+      - name: 3. 登录 GitHub 镜像仓库
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 4. 打包最新镜像并打上版本号与 latest 标签
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/xieling-123/index:latest
+            ghcr.io/xieling-123/index:${{ github.sha }}
+
+  # 阶段二 (CD)：自动部署到服务器（等你以后买了云服务器，取消下面注释并填入密钥即可全自动上线）
+  cd-deploy-server:
+    needs: ci-build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: 模拟通知集群更新
+        run: |
+          echo "镜像已成功推送至 ghcr.io/xieling-123/index:latest"
+          echo "准备触发服务器更新（填入真实服务器 IP 和密钥后自动执行 kubectl apply -f k8s/deployment.yaml）"
+      # - name: 远程连接服务器自动发布
+      #   uses: appleboy/ssh-action@v1.0.3
+      #   with:
+      #     host: ${{ secrets.SERVER_IP }}
+      #     username: root
+      #     password: ${{ secrets.SERVER_PASSWORD }}
+      #     script: |
+      #       kubectl apply -f /root/k8s/deployment.yaml
+      #       kubectl rollout restart deployment/web-prod-deploy

@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-prod-deploy
+  labels:
+    app: web-prod
+spec:
+  replicas: 3                     # 保持 3 个高可用副本
+  selector:
+    matchLabels:
+      app: web-prod
+  template:
+    metadata:
+      labels:
+        app: web-prod
+      annotations:
+        # 告诉 Prometheus 等集群监控系统自动来抓取这里的 Nginx 指标
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
+        prometheus.io/path: "/nginx_status"
+    spec:
+      containers:
+      - name: nginx-web
+        image: ghcr.io/xieling-123/index:latest
+        ports:
+        - containerPort: 80
+        # 【资源限制监控】防止单个容器死循环吃光整台服务器内存
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+        # 【存活探针监控 Liveness】每 10 秒访问一次 /health，如果不通，K8s 自动重启该容器！
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        # 【就绪探针监控 Readiness】确认完全启动健康后，才允许接入外部用户流量
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 3
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-prod-service
+spec:
+  type: NodePort
+  selector:
+    app: web-prod
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30080
